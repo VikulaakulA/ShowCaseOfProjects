@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Вход в админ-панель</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+</head>
+<body class="login-body">
+  <div class="login-container">
+    <a href="javascript:void(0);" onclick="smartGoBack()" class="top-back-btn">
+      <i class="fas fa-arrow-left"></i> Назад
+    </a>
+
+    <div class="login-header">
+      <h1 class="login-title">
+        <i class="fas fa-user-shield"></i> Админ-панель
+      </h1>
+      <p class="login-subtitle">Требуются права администратора</p>
+    </div>
+
+    <div class="login-card">
+      <h2>Авторизация</h2>
+
+      {% if error %}
+        <div class="error-message">
+          Неверный логин или пароль
+        </div>
+      {% endif %}
+
+      <form method="post" action="{{ url_for('admin_login') }}">
+        <div class="form-row">
+          <label for="username">
+            <i class="fas fa-user"></i> Логин
+          </label>
+          <div class="input-group">
+            <i class="fas fa-user-circle"></i>
+            <input type="text"
+                   id="username"
+                   name="username"
+                   required
+                   placeholder="Введите логин администратора"
+                   autocomplete="username">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label for="password">
+            <i class="fas fa-lock"></i> Пароль
+          </label>
+          <div class="input-group">
+            <i class="fas fa-key"></i>
+            <input type="password"
+                   id="password"
+                   name="password"
+                   required
+                   placeholder="Введите пароль"
+                   autocomplete="current-password">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <button type="submit" class="login-btn">
+            <i class="fas fa-sign-in-alt"></i> Войти в систему
+          </button>
+        </div>
+
+        <div class="form-row">
+          <a href="{{ url_for('index') }}" class="back-btn">
+            <i class="fas fa-home"></i> Вернуться на главную
+          </a>
+        </div>
+      </form>
+
+      <div class="login-footer">
+        <p>© <span class="university-name">Дальневосточный Федеральный Университет</span></p>
+        <p>Витрина студенческих проектов</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    window.indexUrl = "{{ url_for('index') }}";
+  </script>
+  <script src="{{ url_for('static', filename='js/login.js') }}"></script>
+</body>
+</html>

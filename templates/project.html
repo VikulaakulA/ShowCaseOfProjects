@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{{ project['title'] }} — Галерея проектов</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/project-detail.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+  <header class="project-header">
+      <div class="header-container">
+          <h1 class="project-main-title">{{ project['title'] }}</h1>
+      </div>
+  </header>
+
+  <main class="project-container">
+    <div class="project-layout">
+      <div class="project-main-content">
+        <div class="project-description">
+          {{ project['description'] }}
+        </div>
+
+        {% if project['tags'] %}
+          <div class="project-tags">
+            {% for tag in project['tags'] %}
+              <span class="project-tag">{{ tag['name'] }}</span>
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        <div class="project-details-grid">
+          <div class="detail-card">
+            <div class="detail-title">
+              <i class="fas fa-university"></i> Кафедра
+            </div>
+            <div class="detail-content">{{ project['department_name'] }}</div>
+          </div>
+
+          <div class="detail-card">
+            <div class="detail-title">
+              <i class="fas fa-user-tie"></i> Наставник
+            </div>
+            <div class="detail-content">{{ project['mentor_name'] }}</div>
+          </div>
+
+          {% if participants %}
+          <div class="detail-card">
+            <div class="detail-title">
+              <i class="fas fa-users"></i> Участники
+            </div>
+            <div class="detail-content participants-content">
+              {% for participant in participants %}
+                {{ participant['participant_name'] }}{% if not loop.last %}, {% endif %}
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+
+          <div class="detail-card">
+            <div class="detail-title">
+              <i class="fas fa-code"></i> Код направления
+            </div>
+            <div class="detail-content code">{{ project['major_code'] }}</div>
+          </div>
+
+          <div class="detail-card">
+            <div class="detail-title">
+              <i class="fas fa-graduation-cap"></i> Профиль ОП
+            </div>
+            <div class="detail-content">{{ project['major_profile'] }}</div>
+          </div>
+
+          <div class="detail-card">
+            <div class="detail-title">
+              <i class="fas fa-handshake"></i> Партнер
+            </div>
+            <div class="detail-content">{{ project['partner_name'] }}</div>
+          </div>
+
+          {% if project['year'] %}
+          <div class="detail-card">
+            <div class="detail-title">
+              <i class="fas fa-calendar-alt"></i> Год реализации
+            </div>
+            <div class="detail-content">{{ project['year'] }}</div>
+          </div>
+          {% endif %}
+
+          {% if project['duration'] %}
+          <div class="detail-card">
+            <div class="detail-title">
+              <i class="fas fa-clock"></i> Длительность
+            </div>
+            <div class="detail-content">{{ project['duration'] }}</div>
+          </div>
+          {% endif %}
+
+          {% if project['team_size'] %}
+          <div class="detail-card">
+            <div class="detail-title">
+              <i class="fas fa-users"></i> Размер команды
+            </div>
+            <div class="detail-content">{{ project['team_size'] }}</div>
+          </div>
+          {% endif %}
+
+          {% if project['result'] %}
+          <div class="detail-card">
+            <div class="detail-title">
+              <i class="fas fa-trophy"></i> Результат
+            </div>
+            <div class="detail-content">{{ project['result'] }}</div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="project-sidebar">
+        <div class="project-image-container">
+          {% if project['logo_storage_name'] %}
+            <img class="project-image"
+                 src="{{ url_for('uploaded_file', filename=project['logo_storage_name']) }}"
+                 alt="{{ project['title'] }}"
+                 loading="lazy">
+          {% else %}
+            <div class="no-image">
+              <i class="fas fa-project-diagram"></i>
+            </div>
+          {% endif %}
+        </div>
+
+        {% if files|length > 0 %}
+          <div class="project-files">
+            <h2 class="files-title">
+              <i class="fas fa-paperclip"></i> Материалы проекта
+            </h2>
+            <div class="file-list">
+              {% for file in files %}
+                <a href="{{ url_for('uploaded_file', filename=file['storage_name']) }}"
+                   class="file-item"
+                   target="_blank"
+                   download="{{ file['filename'] }}">
+                  <div class="file-icon">
+                    {% if file['mime_type'].startswith('image/') %}
+                      <i class="fas fa-image"></i>
+                    {% elif file['mime_type'] == 'application/pdf' %}
+                      <i class="fas fa-file-pdf"></i>
+                    {% elif 'presentation' in file['mime_type'] or 'powerpoint' in file['mime_type'] %}
+                      <i class="fas fa-file-powerpoint"></i>
+                    {% elif 'word' in file['mime_type'] %}
+                      <i class="fas fa-file-word"></i>
+                    {% elif 'excel' in file['mime_type'] %}
+                      <i class="fas fa-file-excel"></i>
+                    {% elif 'video' in file['mime_type'] %}
+                      <i class="fas fa-file-video"></i>
+                    {% elif 'audio' in file['mime_type'] %}
+                      <i class="fas fa-file-audio"></i>
+                    {% elif 'zip' in file['mime_type'] or 'archive' in file['mime_type'] %}
+                      <i class="fas fa-file-archive"></i>
+                    {% else %}
+                      <i class="fas fa-file"></i>
+                    {% endif %}
+                  </div>
+
+                  <div class="file-info">
+                    <div class="file-name">{{ file['filename'] }}</div>
+                    <div class="file-meta">
+                      <span class="file-type">
+                        {% if file['mime_type'].startswith('image/') %}Изображение
+                        {% elif file['mime_type'] == 'application/pdf' %}PDF
+                        {% elif 'presentation' in file['mime_type'] %}Презентация
+                        {% elif 'word' in file['mime_type'] %}Документ
+                        {% elif 'excel' in file['mime_type'] %}Таблица
+                        {% elif 'video' in file['mime_type'] %}Видео
+                        {% elif 'audio' in file['mime_type'] %}Аудио
+                        {% elif 'zip' in file['mime_type'] %}Архив
+                        {% else %}Файл
+                        {% endif %}
+                      </span>
+                      {% if file['mime_type'].startswith('image/') %}
+                        <span style="color: #2a5bd7;">
+                          <i class="fas fa-external-link-alt"></i> Просмотр
+                        </span>
+                      {% endif %}
+                    </div>
+                  </div>
+                </a>
+              {% endfor %}
+            </div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </main>
+
+  <footer class="project-footer">
+    <div class="footer-container">
+      <p class="footer-text">
+        © Дальневосточный Федеральный Университет<br>
+        Витрина студенческих проектов
+      </p>
+    </div>
+  </footer>
+
+  <script>
+    window.indexUrl = "{{ url_for('index') }}";
+  </script>
+  <script src="{{ url_for('static', filename='js/project-detail.js') }}"></script>
+</body>
+</html>

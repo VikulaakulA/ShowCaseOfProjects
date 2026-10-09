@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Админ-панель</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin-styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+<header class="header">
+    <div class="container">
+        <div class="header-top">
+            <h1 class="title"><i class="fas fa-user-laptop"></i> Админ-панель</h1>
+            <div class="header-buttons">
+                <a href="{{ url_for('index') }}" class="back-to-main-btn">
+                    <i class="fas fa-home"></i>
+                    На главную
+                </a>
+                <a href="{{ url_for('admin_logout') }}" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Выйти
+                </a>
+            </div>
+        </div>
+        <div class="search-section">
+            <form method="GET" action="{{ url_for('admin') }}" class="search-form" id="searchForm">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" name="search" placeholder="Поиск проектов..."
+                           value="{{ request.args.get('search', '') }}" id="searchInput"
+                           autocomplete="off">
+
+                    <input type="hidden" name="status" value="{{ status_filter }}" id="statusFilter">
+                </div>
+            </form>
+
+            <div class="filter-section">
+            </div>
+        </div>
+    </div>
+</header>
+
+<main class="main">
+    <div class="container">
+        <div class="admin-container">
+            <div class="admin-tabs">
+                <a href="{{ url_for('admin', status='moderation') }}"
+                   class="tab-btn {% if status_filter == 'moderation' %}active{% endif %}">
+                    <i class="fas fa-clock"></i>
+                    На модерации
+                </a>
+                <a href="{{ url_for('admin', status='posted') }}"
+                   class="tab-btn {% if status_filter == 'posted' %}active{% endif %}">
+                    <i class="fas fa-store"></i>
+                    На витрине
+                </a>
+                <a href="{{ url_for('admin', status='hidden') }}"
+                   class="tab-btn {% if status_filter == 'hidden' %}active{% endif %}">
+                    <i class="fas fa-eye-slash"></i>
+                    Скрытые
+                </a>
+                <a href="{{ url_for('admin', status='all') }}"
+                   class="tab-btn {% if status_filter == 'all' %}active{% endif %}">
+                    <i class="fas fa-list"></i>
+                    Все проекты
+                </a>
+            </div>
+
+            <div class="admin-actions">
+                <a href="{{ url_for('admin_forms') }}" class="create-project-btn">
+                    <i class="fas fa-plus-circle"></i>
+                    Создать новый проект
+                </a>
+            </div>
+
+            <div class="admin-projects">
+                {% if projects %}
+                <div class="projects-grid" id="projectsGrid">
+                    {% for project in projects %}
+                    <div class="admin-project-card searchable-card"
+                         data-title="{{ project.title|lower }}"
+                         data-description="{{ project.short_description|default('', true)|lower }}"
+                         data-tags="{% if project.tags %}{% for tag in project.tags %}{{ tag.name|lower }} {% endfor %}{% endif %}"
+                         data-status="{{ project.status }}">
+                        <div class="project-card-header">
+                            {% if project.logo_storage_name %}
+                            <div class="project-logo-small"
+                                 style="background-image: url('{{ url_for('uploaded_file', filename=project.logo_storage_name) }}');">
+                            </div>
+                            {% else %}
+                            <div class="project-logo-small">
+                                <i class="fas fa-project-diagram"></i>
+                            </div>
+                            {% endif %}
+
+                            <div class="project-header-info">
+                                <h3 class="searchable-title">{{ project.title }}</h3>
+                                <div class="project-meta">
+                                    <span class="project-status status-{{ project.status }}">
+                                        <i class="fas fa-circle"></i>
+                                        {% if project.status == 'moderation' %}На модерации
+                                        {% elif project.status == 'posted' %}На витрине
+                                        {% elif project.status == 'hidden' %}Скрыт
+                                        {% elif project.status == 'pending' %}Черновик
+                                        {% else %}{{ project.status }}{% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="project-card-body">
+                            <p class="project-short-description searchable-description">
+                                {{ project.short_description|truncate(150) if project.short_description else 'Нет
+                                описания' }}
+                            </p>
+
+                            {% if project.tags %}
+                            <div class="project-tags-small">
+                                {% for tag in project.tags[:3] %}
+                                <span class="tag-small searchable-tag">{{ tag.name }}</span>
+                                {% endfor %}
+                                {% if project.tags|length > 3 %}
+                                <span class="tag-more">+{{ project.tags|length - 3 }}</span>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="project-card-actions">
+
+                            <a href="{{ url_for('project_view', project_id=project.id) }}"
+                               class="action-btn view-btn" target="_blank">
+                                <i class="fas fa-external-link-alt"></i> Просмотр
+                            </a>
+
+                            {% if project.status == 'moderation' %}
+                            <form method="POST" action="{{ url_for('admin_approve', project_id=project.id) }}"
+                                  style="display: inline;">
+                                <button type="submit" class="action-btn approve-btn"
+                                        onclick="return confirm('Одобрить проект и опубликовать на витрине?')">
+                                    <i class="fas fa-check"></i> Одобрить
+                                </button>
+                            </form>
+                            <form method="POST" action="{{ url_for('admin_delete', project_id=project.id) }}"
+                                  style="display: inline;">
+                                <button type="submit" class="action-btn delete-btn"
+                                        onclick="return confirm('Удалить проект безвозвратно?')">
+                                    <i class="fas fa-trash"></i> Удалить
+                                </button>
+                            </form>
+                            {% elif project.status == 'posted' %}
+                            <form method="POST" action="{{ url_for('admin_hide', project_id=project.id) }}"
+                                  style="display: inline;">
+                                <button type="submit" class="action-btn hide-btn"
+                                        onclick="return confirm('Скрыть проект с витрины?')">
+                                    <i class="fas fa-eye-slash"></i> Скрыть
+                                </button>
+                            </form>
+                            <form method="POST" action="{{ url_for('admin_delete', project_id=project.id) }}"
+                                  style="display: inline;">
+                                <button type="submit" class="action-btn delete-btn"
+                                        onclick="return confirm('Удалить проект безвозвратно?')">
+                                    <i class="fas fa-trash"></i> Удалить
+                                </button>
+                            </form>
+                            {% elif project.status == 'hidden' %}
+                            <form method="POST" action="{{ url_for('admin_post', project_id=project.id) }}"
+                                  style="display: inline;">
+                                <button type="submit" class="action-btn show-btn"
+                                        onclick="return confirm('Опубликовать проект на витрине?')">
+                                    <i class="fas fa-eye"></i> Показать
+                                </button>
+                            </form>
+                            <form method="POST" action="{{ url_for('admin_delete', project_id=project.id) }}"
+                                  style="display: inline;">
+                                <button type="submit" class="action-btn delete-btn"
+                                        onclick="return confirm('Удалить проект безвозвратно?')">
+                                    <i class="fas fa-trash"></i> Удалить
+                                </button>
+                            </form>
+                            {% elif project.status == 'pending' %}
+                            <form method="POST" action="{{ url_for('admin_post', project_id=project.id) }}"
+                                  style="display: inline;">
+                                <button type="submit" class="action-btn show-btn"
+                                        onclick="return confirm('Опубликовать проект на витрине?')">
+                                    <i class="fas fa-eye"></i> Опубликовать
+                                </button>
+                            </form>
+                            <form method="POST" action="{{ url_for('admin_delete', project_id=project.id) }}"
+                                  style="display: inline;">
+                                <button type="submit" class="action-btn delete-btn"
+                                        onclick="return confirm('Удалить проект безвозвратно?')">
+                                    <i class="fas fa-trash"></i> Удалить
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="no-projects-found" id="noResults" style="display: none;">
+                    <div class="no-projects-icon">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <h2>Ничего не найдено</h2>
+                    <p>Попробуйте изменить поисковый запрос</p>
+                    <button class="reset-btn" onclick="clearSearch()">
+                        <i class="fas fa-redo"></i> Очистить поиск
+                    </button>
+                </div>
+
+                {% else %}
+                <div class="no-projects-admin">
+                    <div class="no-projects-icon">
+                        <i class="fas fa-inbox"></i>
+                    </div>
+                    <h2>Проектов нет</h2>
+                    <p>В этой категории пока нет проектов</p>
+                    {% if status_filter == 'moderation' %}
+                    <p>Здесь будут появляться проекты, отправленные студентами на модерацию</p>
+                    {% elif status_filter == 'posted' %}
+                    <p>Здесь будут проекты, которые сейчас отображаются на витрине</p>
+                    {% elif status_filter == 'hidden' %}
+                    <p>Здесь будут проекты, которые были скрыты с витрины</p>
+                    {% elif status_filter == 'pending' %}
+                    <p>Здесь будут черновики проектов администратора</p>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</main>
+
+<script src="{{ url_for('static', filename='js/admin-search.js') }}"></script>
+</body>
+</html>

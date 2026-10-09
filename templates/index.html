@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Витрина проектов</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index-page.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+<header class="header">
+    <div class="container">
+        <div class="header-top">
+            <h1 class="title"><img src="{{ url_for('static', filename='pictures/ru.png') }}" width="35" height="60"> Витрина проектов ДВФУ</h1>
+            <div class="header-buttons">
+                {% if not is_admin %}
+                    <a class="submit-project-btn">
+                        <i class="fas fa-plus-circle"></i>
+                        Подать заявку на проект
+                    </a>
+                {% endif %}
+                {% if is_admin %}
+                    <a href="{{ url_for('admin') }}" class="admin-btn">
+                        <i class="fas fa-user-laptop"></i>
+                        Админ-панель
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="search-section">
+            <form method="GET" action="/" class="search-form" id="searchForm">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" name="search" placeholder="Поиск проектов..."
+                           value="{{ request.args.get('search', '') }}" id="searchInput"
+                           autocomplete="off">
+                </div>
+            </form>
+
+            <div class="filter-section">
+                <span class="filter-info" id="searchCounter">
+                    Найдено проектов: <span id="visibleCount">{{ projects|length }}</span>
+                </span>
+                <button class="tags-btn" type="button" onclick="toggleTagsSidebar()">
+                    Все теги
+                    {% if selected_tags %}
+                    <span class="selected-count">({{ selected_tags|length }})</span>
+                    {% endif %}
+                </button>
+            </div>
+        </div>
+    </div>
+</header>
+
+<div class="tags-sidebar-overlay" id="tagsOverlay" onclick="toggleTagsSidebar()"></div>
+<div class="tags-sidebar" id="tagsSidebar">
+    <div class="sidebar-header">
+        <h3><i class="fas fa-filter"></i> Фильтр по тегам</h3>
+        <button class="close-sidebar" onclick="toggleTagsSidebar()">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+
+    {% if tags_grouped %}
+    <form method="GET" action="/" class="tags-filter-form" id="tagsForm">
+        <input type="hidden" name="search" value="{{ request.args.get('search', '') }}" id="hiddenSearch">
+
+        {% for category, tags in tags_grouped.items() %}
+        <div class="tag-category">
+            <h4>{{ category }} <span class="count">{{ tags|length }}</span></h4>
+            <div class="tag-group">
+                {% for tag in tags %}
+                <label class="tag-checkbox">
+                    <input type="checkbox" name="tags" value="{{ tag.id }}"
+                           {% if tag.id|string in selected_tags %}checked{% endif %}>
+                    <span class="tag-label">{{ tag.name }}</span>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+
+        <div class="filter-buttons">
+            <button type="submit" class="apply-btn">
+                <i class="fas fa-check"></i> Применить
+            </button>
+            <button type="button" class="reset-btn" onclick="resetFilters()">
+                <i class="fas fa-times"></i> Сбросить
+            </button>
+        </div>
+    </form>
+    {% else %}
+    <div class="no-tags">
+        <i class="fas fa-tags"></i>
+        <p>Теги не найдены</p>
+    </div>
+    {% endif %}
+</div>
+
+<main class="main">
+    <div class="container main-container">
+        <div class="cards-container">
+            {% if projects %}
+            <div class="cards" id="projectsGrid">
+                {% for project in projects %}
+                <div class="card searchable-card" onclick="flipCard(this)"
+                     data-project-id="{{ project.id }}"
+                     data-title="{{ project.title|lower }}"
+                     data-description="{{ project.short_description|default('', true)|lower }}"
+                     data-tags="{% if project.tags %}{% for tag in project.tags %}{{ tag.name|lower }} {% endfor %}{% endif %}">
+                    <div class="card-inner">
+                        <div class="card-front">
+                            <div class="card-front-content">
+                                {% if project.logo_storage_name %}
+                                <div class="card-image" style="background-image: url('{{ url_for('uploaded_file', filename=project.logo_storage_name) }}');">
+                                </div>
+                                {% else %}
+                                <div class="card-image">
+                                    <i class="fas fa-project-diagram"></i>
+                                </div>
+                                {% endif %}
+
+                                <div class="card-tags">
+                                    {% if project.tags %}
+                                        {% for tag in project.tags %}
+                                        <span class="tag {% if loop.index > 3 %}hidden-tag{% endif %}"
+                                              data-tag-index="{{ loop.index0 }}">
+                                            {{ tag.name }}
+                                        </span>
+                                        {% endfor %}
+
+                                        {% if project.tags|length > 3 %}
+                                        <button class="show-more-tags" onclick="event.stopPropagation(); toggleHiddenTags(this)">
+                                            Ещё {{ project.tags|length - 3 }} тег{{ 'а' if (project.tags|length - 3) in [2,3,4] else '' if (project.tags|length - 3) == 1 else 'ов' }}
+                                        </button>
+                                        {% endif %}
+                                    {% else %}
+                                        <span>Без тегов</span>
+                                    {% endif %}
+                                </div>
+
+                                <h3 class="card-title-front">{{ project.title }}</h3>
+                            </div>
+                        </div>
+
+                        <div class="card-back">
+                            <button class="back-to-front" onclick="event.stopPropagation(); flipCard(this.closest('.card'))">
+                                <i class="fas fa-undo"></i>
+                            </button>
+
+                            <h3 class="card-back-title">{{ project.title }}</h3>
+
+                            <div class="card-back-description">
+                                {% if project.short_description %}
+                                <div class="description-text">
+                                    {{ project.short_description }}
+                                </div>
+                                {% else %}
+                                <div class="description-text">
+                                    <p>Краткое описание отсутствует</p>
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="project-card-date" style="font-size: 0.8rem; color: #ccc; margin-top: -10px; margin-bottom: 15px; display: flex; align-items: center; gap: 5px; justify-content: center;">
+                                <i class="fas fa-calendar-alt"></i>
+                                <span>Добавлено: {{ project.created_at | format_date if project.created_at else 'Недавно' }}</span>
+                            </div>
+
+                            <a href="{{ url_for('project_view', project_id=project.id) }}" class="card-back-btn" onclick="event.stopPropagation()">
+                                Подробнее о проекте
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="no-projects" id="noResults" style="display: none;">
+                <div class="no-projects-icon">
+                    <i class="fas fa-search"></i>
+                </div>
+                <h2>Проекты не найдены</h2>
+                <p>Попробуйте изменить поисковый запрос или выбрать другие теги</p>
+                {% if not is_admin %}
+                <a href="{{ url_for('submit_project_form') }}" class="submit-project-btn-large">
+                    <i class="fas fa-plus-circle"></i>
+                    Станьте первым! Подать проект
+                </a>
+                {% endif %}
+                <button class="reset-btn" onclick="clearSearch()">
+                    <i class="fas fa-redo"></i> Очистить поиск
+                </button>
+            </div>
+
+            {% else %}
+            <div class="no-projects">
+                <div class="no-projects-icon">
+                    <i class="fas fa-search"></i>
+                </div>
+                <h2>Проекты не найдены</h2>
+                <p>Попробуйте изменить поисковый запрос или выбрать другие теги</p>
+                {% if not is_admin %}
+                <a href="{{ url_for('submit_project_form') }}" class="submit-project-btn-large">
+                    <i class="fas fa-plus-circle"></i>
+                    Станьте первым! Подать проект
+                </a>
+                {% endif %}
+                <button class="reset-btn" onclick="resetFilters()">
+                    <i class="fas fa-redo"></i> Сбросить фильтры
+                </button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</main>
+
+<div class="footer-line"></div>
+
+<footer class="footer">
+    <div class="container footer-inner">
+        <div class="footer-contacts">
+            <h4><i class="fas fa-phone-alt"></i> Контакты</h4>
+            <p><strong>Телефон:</strong> 8 800 550-38-38</p>
+            <p><strong>Почта:</strong> rectorat@dvfu.ru</p>
+        </div>
+
+        <div class="footer-center">
+            <div class="university-logo">
+                <img src="{{ url_for('static', filename='pictures/ru.png') }}" width="25" height="50">
+                <h3>ДВФУ</h3>
+            </div>
+            <p><strong>Дальневосточный федеральный университет</strong></p>
+            <p>Владивосток, о. Русский, п. Аякс, 10</p>
+        </div>
+    </div>
+</footer>
+
+<script>
+    const selectedTagsCount = {{ selected_tags|length }};
+</script>
+
+<script src="{{ url_for('static', filename='js/index.js') }}"></script>
+</body>
+</html>
