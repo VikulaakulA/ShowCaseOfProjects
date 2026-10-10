@@ -1,23 +1,12 @@
 FROM python:3.11-slim
-
-RUN apt-get update && apt-get install -y \
-    gcc \
-    && rm -rf /var/lib/apt/lists/*
-
 WORKDIR /app
-
 COPY requirements.txt .
-
 RUN pip install --no-cache-dir -r requirements.txt
-
-COPY . .
-
-RUN mkdir -p uploads
-
-ENV FLASK_APP=app.py
-ENV FLASK_ENV=production
-ENV FLASK_SECRET_KEY=your-secret-key-change-in-production
-
-EXPOSE 5001
-
+COPY app.py ./
+COPY templates ./templates
+COPY static ./static
+ENV DATA_DIR=/app/data
+ENV PORT=5003
+RUN mkdir -p /app/data/uploads
+EXPOSE 5003
 CMD ["python", "app.py"]

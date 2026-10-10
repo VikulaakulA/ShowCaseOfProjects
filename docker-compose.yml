@@ -1,23 +1,12 @@
-FROM python:3.11-slim
-
-RUN apt-get update && apt-get install -y \
-    gcc \
-    && rm -rf /var/lib/apt/lists/*
-
-WORKDIR /app
-
-COPY requirements.txt .
-
-RUN pip install --no-cache-dir -r requirements.txt
-
-COPY . .
-
-RUN mkdir -p uploads
-
-ENV FLASK_APP=app.py
-ENV FLASK_ENV=production
-ENV FLASK_SECRET_KEY=your-secret-key-change-in-production
-
-EXPOSE 5001
-
-CMD ["python", "app.py"]
+services:
+  web:
+    build: .
+    ports:
+      - "5003:5003"
+    environment:
+      FLASK_SECRET_KEY: ${FLASK_SECRET_KEY:-change-me-secret}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-qwerty}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-12345}
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped

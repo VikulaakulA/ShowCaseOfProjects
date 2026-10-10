@@ -1,6 +1,6 @@
 import sqlite3
 
-DB_PATH = 'showcase_of_projects.db'
+DB_PATH = 'data/showcase_of_projects.db'
 
 DDL = '''
 PRAGMA foreign_keys = ON;
